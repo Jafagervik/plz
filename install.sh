@@ -2,7 +2,6 @@
 
 set -e
 
-# Colors for better output
 GREEN='\033[0;32m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
@@ -31,13 +30,12 @@ else
     exit 1
 fi
 
-# Temporary directory for download
 TEMP_DIR=$(mktemp -d)
 trap 'rm -rf "$TEMP_DIR"' EXIT
 
 # GitHub repo information
 REPO="Jafagervik/plz"
-VERSION="latest" # or specify a version like "v1.0.0"
+VERSION="latest" #
 
 # Get latest release if version is "latest"
 if [ "$VERSION" = "latest" ]; then
@@ -47,10 +45,8 @@ fi
 
 echo "Downloading version $VERSION for $OS-$ARCH..."
 
-# Download URL construction
 DOWNLOAD_URL="https://github.com/$REPO/releases/download/$VERSION/plz-$OS-$ARCH.tar.gz"
 
-# Download and extract
 curl -sL "$DOWNLOAD_URL" -o "$TEMP_DIR/plz.tar.gz"
 mkdir -p "$TEMP_DIR/extract"
 tar -xzf "$TEMP_DIR/plz.tar.gz" -C "$TEMP_DIR/extract"
@@ -73,7 +69,6 @@ fi
 
 echo "${GREEN}Installation complete!${NC}"
 
-# Add to PATH if needed
 if ! command -v your-tool >/dev/null; then
     case $SHELL in
     */zsh)
