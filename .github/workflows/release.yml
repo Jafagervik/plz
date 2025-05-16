@@ -1,0 +1,71 @@
+
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    name: Build and Release
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        include:
+          - os: ubuntu-latest
+            target_os: linux
+          - os: macos-latest
+            target_os: macos
+
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup Zig
+        uses: goto-bus-stop/setup-zig@v2
+        with:
+          version: 0.14.0
+
+      - name: Build for x86_64
+        run: |
+          zig build -Dtarget=x86_64-${{ matrix.target_os }} -Doptimize=ReleaseSafe
+          mkdir -p dist/plz-${{ matrix.target_os }}-x86_64
+          cp zig-out/bin/plz dist/plz-${{ matrix.target_os }}-x86_64/
+          cd dist && tar -czf plz-${{ matrix.target_os }}-x86_64.tar.gz plz-${{ matrix.target_os }}-x86_64/
+      
+      - name: Build for aarch64
+        run: |
+          zig build -Dtarget=aarch64-${{ matrix.target_os }} -Doptimize=ReleaseSafe
+          mkdir -p dist/plz-${{ matrix.target_os }}-aarch64
+          cp zig-out/bin/plz dist/plz-${{ matrix.target_os }}-aarch64/
+          cd dist && tar -czf plz-${{ matrix.target_os }}-aarch64.tar.gz plz-${{ matrix.target_os }}-aarch64/
+      
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: binaries-${{ matrix.target_os }}
+          path: dist/*.tar.gz
+          
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Download all artifacts
+        uses: actions/download-artifact@v3
+        with:
+          path: artifacts
+          
+      - name: Prepare release files
+        run: |
+          mkdir -p release
+          find artifacts -name "*.tar.gz" -exec cp {} release/ \;
+          
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: release/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
